@@ -120,5 +120,4 @@ def main():
 
 if __name__ == '__main__':
     main()
-git commit -m "Updated app.py with new features/fixes"
-git push origin main
+

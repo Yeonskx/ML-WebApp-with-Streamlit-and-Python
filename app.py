@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import os
 from sklearn.svm import SVC
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
@@ -17,21 +18,27 @@ def main():
 
     @st.cache_data
     def load_data():
-        data = pd.read_csv(
-    r"C:\Users\jenan\Downloads\ht6rvB8XQ5Geq7wfF4ORpA_89c8046cbf574470a4a649b3751e41e6_streamlit-ml\streamlit-ml\mushrooms.csv")
+        # Build a path relative to the script's location
+        base_path = os.path.dirname(__file__)
+        file_path = os.path.join(base_path, "mushrooms.csv")
+
+        data = pd.read_csv(file_path)
+
+        # Encode categorical features
         labelencoder = LabelEncoder()
         for col in data.columns:
             data[col] = labelencoder.fit_transform(data[col])
         return data
 
-    
     @st.cache_data
     def split(df):
         y = df.type
         x = df.drop(columns=['type'])
-        x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.3, random_state=0)
+        x_train, x_test, y_train, y_test = train_test_split(
+            x, y, test_size=0.3, random_state=0
+        )
         return x_train, x_test, y_train, y_test
-    
+
     def plot_metrics(metrics_list, model, x_test, y_test, class_names):
         if 'Confusion Matrix' in metrics_list:
             st.subheader("Confusion Matrix")
@@ -50,7 +57,7 @@ def main():
 
     df = load_data()
     class_names = ['edible', 'poisonous']
-    
+
     x_train, x_test, y_train, y_test = split(df)
 
     st.sidebar.subheader("Choose Classifier")
@@ -63,7 +70,7 @@ def main():
         gamma = st.sidebar.radio("Gamma (Kernel Coefficient)", ("scale", "auto"), key='gamma')
 
         metrics = st.sidebar.multiselect("What metrics to plot?", ('Confusion Matrix', 'ROC Curve', 'Precision-Recall Curve'))
-        
+
         if st.sidebar.button("Classify", key='classify'):
             st.subheader("Support Vector Machine (SVM) Results")
             model = SVC(C=C, kernel=kernel, gamma=gamma, probability=True)
@@ -74,7 +81,7 @@ def main():
             st.write("Precision: ", round(precision_score(y_test, y_pred), 2))
             st.write("Recall: ", round(recall_score(y_test, y_pred), 2))
             plot_metrics(metrics, model, x_test, y_test, class_names)
-    
+
     if classifier == 'Logistic Regression':
         st.sidebar.subheader("Model Hyperparameters")
         C = st.sidebar.number_input("C (Regularization parameter)", 0.01, 10.0, step=0.01, key='C_LR')
@@ -92,7 +99,7 @@ def main():
             st.write("Precision: ", round(precision_score(y_test, y_pred), 2))
             st.write("Recall: ", round(recall_score(y_test, y_pred), 2))
             plot_metrics(metrics, model, x_test, y_test, class_names)
-    
+
     if classifier == 'Random Forest':
         st.sidebar.subheader("Model Hyperparameters")
         n_estimators = st.sidebar.number_input("The number of trees in the forest", 100, 5000, step=10, key='rf_n_estimators')
@@ -102,7 +109,12 @@ def main():
 
         if st.sidebar.button("Classify", key='classify'):
             st.subheader("Random Forest Results")
-            model = RandomForestClassifier(n_estimators=n_estimators, max_depth=max_depth, bootstrap=bootstrap == 'True', n_jobs=-1)
+            model = RandomForestClassifier(
+                n_estimators=n_estimators,
+                max_depth=max_depth,
+                bootstrap=bootstrap == 'True',
+                n_jobs=-1
+            )
             model.fit(x_train, y_train)
             accuracy = model.score(x_test, y_test)
             y_pred = model.predict(x_test)
@@ -114,10 +126,12 @@ def main():
     if st.sidebar.checkbox("Show raw data", False):
         st.subheader("Mushroom Data Set (Classification)")
         st.write(df)
-        st.markdown("This [data set](https://archive.ics.uci.edu/ml/datasets/Mushroom) includes descriptions of hypothetical samples corresponding to 23 species of gilled mushrooms "
-        "in the Agaricus and Lepiota Family (pp. 500-525). Each species is identified as definitely edible, definitely poisonous, "
-        "or of unknown edibility and not recommended. This latter class was combined with the poisonous one.")
+        st.markdown(
+            "This [data set](https://archive.ics.uci.edu/ml/datasets/Mushroom) includes descriptions of hypothetical samples "
+            "corresponding to 23 species of gilled mushrooms in the Agaricus and Lepiota Family (pp. 500-525). "
+            "Each species is identified as definitely edible, definitely poisonous, "
+            "or of unknown edibility and not recommended. This latter class was combined with the poisonous one."
+        )
 
 if __name__ == '__main__':
     main()
-
